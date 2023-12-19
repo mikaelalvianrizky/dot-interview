@@ -10,3 +10,7 @@
 
 ### API Documentation
 - Accessed at https://documenter.getpostman.com/view/21722434/2s9YkodgRm
+
+### Akun dummy
+- "email": "mikael@gmail.com",
+- "password": "mikael"
