@@ -6,6 +6,7 @@ using ECommerceApi.Services;
 using ECommerceApi.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ECommerceApi.Controllers
 {
@@ -14,15 +15,22 @@ namespace ECommerceApi.Controllers
     public class ProductController: ControllerBase
     {
         private readonly DataContext _context;
-        public ProductController(DataContext context)
+        private readonly IMemoryCache _memoryCache;
+        public ProductController(DataContext context, IMemoryCache memoryCache)
         {
             _context = context;
+            _memoryCache = memoryCache;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetList()
         {
-            List<ProductModel> products = await _context.Products.ToListAsync();
+            List<ProductModel> products;
+            products = _memoryCache.Get<List<ProductModel>>("products");
+            if(products is null) {
+                products = await _context.Products.ToListAsync();
+                _memoryCache.Set("products", products, TimeSpan.FromMinutes(1));
+            }
             return Ok(ResponseBuilder.SuccessResponse("Success get list product", products));
         }
 
