@@ -25,70 +25,97 @@ namespace ECommerceApi.Controllers
         [HttpGet]
         public async Task<IActionResult> GetList()
         {
-            List<ProductModel> products;
-            products = _memoryCache.Get<List<ProductModel>>("products");
-            if(products is null) {
-                products = await _context.Products.ToListAsync();
-                _memoryCache.Set("products", products, TimeSpan.FromMinutes(1));
+            try
+            {
+                List<ProductModel> products;
+                products = _memoryCache.Get<List<ProductModel>>("products");
+                if(products is null) {
+                    products = await _context.Products.ToListAsync();
+                    _memoryCache.Set("products", products, TimeSpan.FromMinutes(1));
+                }
+                return Ok(ResponseBuilder.SuccessResponse("Success get list product", products));
             }
-            return Ok(ResponseBuilder.SuccessResponse("Success get list product", products));
+            catch (Exception ex)
+            {
+                return StatusCode(400, ResponseBuilder.ErrorResponse(400, ex.Message));
+            }
         }
 
         [HttpGet]
         [Route("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            List<ProductModel> products = await _context.Products.Where(product => product.Id.Equals(id)).ToListAsync();
-            
-            if (products.Count != 0) return Ok(ResponseBuilder.SuccessResponse("Success get product", products[0]));
-            return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Product not found"));
+            try{
+                List<ProductModel> products = await _context.Products.Where(product => product.Id.Equals(id)).ToListAsync();
+                
+                if (products.Count != 0) return Ok(ResponseBuilder.SuccessResponse("Success get product", products[0]));
+                return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Product not found"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(400, ResponseBuilder.ErrorResponse(400, ex.Message));
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateProduct(ProductReqDTO productReq)
         {
-            var validationResult = MinimalValidator.Validate(productReq);
-            if (!validationResult.IsValid)
+            try
             {
-                return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Validation failed", validationResult.Errors));
+                var validationResult = MinimalValidator.Validate(productReq);
+                if (!validationResult.IsValid)
+                {
+                    return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Validation failed", validationResult.Errors));
+                }
+                ProductModel product = new()
+                {
+                    Name = productReq.Name,
+                    Brand = productReq.Brand,
+                    Price = productReq.Price,
+                    Size = productReq.Size
+                };
+
+                _context.Products.Add(product);
+                await _context.SaveChangesAsync();
+
+                return Ok(ResponseBuilder.SuccessResponse("Success create product", product));
             }
-            ProductModel product = new()
+            catch (Exception ex)
             {
-                Name = productReq.Name,
-                Brand = productReq.Brand,
-                Price = productReq.Price,
-                Size = productReq.Size
-            };
-
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
-
-            return Ok(ResponseBuilder.SuccessResponse("Success create product", product));
+                return StatusCode(400, ResponseBuilder.ErrorResponse(400, ex.Message));
+            }
         }
 
         [HttpPut]
         [Route("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, ProductReqDTO productReq)
         {
-            var validationResult = MinimalValidator.Validate(productReq);
-            if (!validationResult.IsValid)
+            try
             {
-                return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Validation failed", validationResult.Errors));
-            }
-            ProductModel product = await _context.Products.Where(d => d.Id.Equals(id)).FirstOrDefaultAsync();
+                var validationResult = MinimalValidator.Validate(productReq);
+                if (!validationResult.IsValid)
+                {
+                    return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Validation failed", validationResult.Errors));
+                }
+                ProductModel product = await _context.Products.Where(d => d.Id.Equals(id)).FirstOrDefaultAsync();
 
-            if (product != null)
+                if (product != null)
+                {
+                    product.Name = productReq.Name;
+                    product.Brand = productReq.Brand;
+                    product.Price = productReq.Price;
+                    product.Size = productReq.Size;
+                    await _context.SaveChangesAsync();
+
+                    return Ok(ResponseBuilder.SuccessResponse("Success update product", product));
+                }
+                
+                return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Product not found"));
+            }
+            catch (Exception ex)
             {
-                product.Name = productReq.Name;
-                product.Brand = productReq.Brand;
-                product.Price = productReq.Price;
-                product.Size = productReq.Size;
-                await _context.SaveChangesAsync();
-
-                return Ok(ResponseBuilder.SuccessResponse("Success update product", product));
+                return StatusCode(400, ResponseBuilder.ErrorResponse(400, ex.Message));
             }
-            
-            return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Product not found"));
         }
 
 
@@ -96,14 +123,21 @@ namespace ECommerceApi.Controllers
         [Route("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            ProductModel product = await _context.Products.Where(d => d.Id.Equals(id)).FirstOrDefaultAsync();
-            if (product != null)
+            try
             {
-                _context.Products.Remove(product);
-                await _context.SaveChangesAsync();
-                return Ok(ResponseBuilder.SuccessResponse("Success delete product", product));
+                ProductModel product = await _context.Products.Where(d => d.Id.Equals(id)).FirstOrDefaultAsync();
+                if (product != null)
+                {
+                    _context.Products.Remove(product);
+                    await _context.SaveChangesAsync();
+                    return Ok(ResponseBuilder.SuccessResponse("Success delete product", product));
+                }
+                return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Product not found"));
             }
-            return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Product not found"));
+            catch (Exception ex)
+            {
+                return StatusCode(400, ResponseBuilder.ErrorResponse(400, ex.Message));
+            }
         }
     }
 }

@@ -32,23 +32,30 @@ namespace ECommerceApi.Controllers
         [Route("login")]
         public async Task<IActionResult> Login(LoginReqDTO loginReq)
         {
-            var validationResult = MinimalValidator.Validate(loginReq);
-            if (!validationResult.IsValid)
+            try
             {
-                return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Validation failed", validationResult.Errors));
-            }
+                var validationResult = MinimalValidator.Validate(loginReq);
+                if (!validationResult.IsValid)
+                {
+                    return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Validation failed", validationResult.Errors));
+                }
 
-            loginReq.Password = PasswordHasher.Make(loginReq.Password);
-            UserModel user = await _context.Users.Where(user => user.Email == loginReq.Email && user.Password == loginReq.Password).FirstOrDefaultAsync();
-            if (user != null) {
-                return Ok(ResponseBuilder.SuccessResponse("Success get order", new LoginRespDTO {
-                    Id = user.Id,
-                    Name=user.Name,
-                    Email=user.Email,
-                    Token=CreateTokenUser(user)
-                }));
+                loginReq.Password = PasswordHasher.Make(loginReq.Password);
+                UserModel user = await _context.Users.Where(user => user.Email == loginReq.Email && user.Password == loginReq.Password).FirstOrDefaultAsync();
+                if (user != null) {
+                    return Ok(ResponseBuilder.SuccessResponse("Success get order", new LoginRespDTO {
+                        Id = user.Id,
+                        Name=user.Name,
+                        Email=user.Email,
+                        Token=CreateTokenUser(user)
+                    }));
+                }
+                return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Invalid username or password"));
             }
-            return StatusCode(400, ResponseBuilder.ErrorResponse(400, "Invalid username or password"));
+            catch (Exception ex)
+            {
+                return StatusCode(400, ResponseBuilder.ErrorResponse(400, ex.Message));
+            }
         }
 
 
@@ -56,16 +63,23 @@ namespace ECommerceApi.Controllers
         [Route("register")]
         public async Task<IActionResult> Register(RegisterReqDTO registerReq)
         {
-            UserModel user = new()
+            try
             {
-                Name = registerReq.Name,
-                Email = registerReq.Email,
-                Password = PasswordHasher.Make(registerReq.Password)
-            };
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+                UserModel user = new()
+                {
+                    Name = registerReq.Name,
+                    Email = registerReq.Email,
+                    Password = PasswordHasher.Make(registerReq.Password)
+                };
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
 
-            return Ok(ResponseBuilder.SuccessResponse("Successfully registered user", user));
+                return Ok(ResponseBuilder.SuccessResponse("Successfully registered user", user));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(400, ResponseBuilder.ErrorResponse(400, ex.Message));
+            }
         }
 
 
