@@ -21,7 +21,7 @@ namespace ECommerceApi.Services
 
         public async Task<ProductModel> GetProductById(int id)
         {
-            ProductModel product = await _context.Products.Where(product => product.Id.Equals(id)).FirstAsync();
+            ProductModel product = await _context.Products.Where(product => product.Id.Equals(id)).FirstOrDefaultAsync();
             return product;
         }
 

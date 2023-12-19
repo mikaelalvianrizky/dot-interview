@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ECommerceApi.Models.DTO.Request
+namespace ECommerceApi.Models.DTO.Response
 {
-    public class OrderReqDTO
+    public class OrderRespDTO
     {
-        public List<int> ProductIds { get; set; }
         public string Name { get; set; }
         public string Address { get; set; }
         public string Phone { get; set; }
+        public List<OrderDetailModel> Details { get; set; }
     }
 }
